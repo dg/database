@@ -185,6 +185,9 @@ class ActiveRow implements \IteratorAggregate, IRow
 				throw new Nette\InvalidStateException('Database refetch failed; row does not exist!');
 			}
 			$this->data = $row->data;
+			if (!is_array($this->data)) {
+				\Tracy\Debugger::log(new \Exception('Bad data: ' . gettype($this->data)));
+			}
 			return TRUE;
 		} else {
 			return FALSE;
@@ -323,6 +326,9 @@ class ActiveRow implements \IteratorAggregate, IRow
 		$this->table->accessColumn($key, $selectColumn);
 		if ($this->table->getDataRefreshed() && !$this->dataRefreshed) {
 			$this->data = $this->table[$this->getSignature()]->data;
+			if (!is_array($this->data)) {
+				\Tracy\Debugger::log(new \Exception('Bad data: ' . gettype($this->data)));
+			}
 			$this->dataRefreshed = TRUE;
 		}
 		return array_key_exists($key, $this->data);

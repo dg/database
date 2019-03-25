@@ -10,7 +10,7 @@ declare(strict_types=1);
 namespace Nette\Bridges\DatabaseDI;
 
 use Nette;
-use Nette\Schema\Expect;
+use Nette\DI\Config\Expect;
 
 
 /**
@@ -18,6 +18,9 @@ use Nette\Schema\Expect;
  */
 class DatabaseExtension extends Nette\DI\CompilerExtension
 {
+	/** @var DatabaseConfig[] */
+	public $config;
+
 	/** @var bool */
 	private $debugMode;
 
@@ -28,25 +31,14 @@ class DatabaseExtension extends Nette\DI\CompilerExtension
 	}
 
 
-	public function getConfigSchema(): Nette\Schema\Schema
+	public function getConfigSchema(): Nette\DI\Config\Schema
 	{
-		return Expect::arrayOf(
-			Expect::structure([
-				'dsn' => Expect::string()->required()->dynamic(),
-				'user' => Expect::string()->nullable()->dynamic(),
-				'password' => Expect::string()->nullable()->dynamic(),
-				'options' => Expect::array(),
-				'debugger' => Expect::bool(true),
-				'explain' => Expect::bool(true),
-				'reflection' => Expect::string(), // BC
-				'conventions' => Expect::string('discovered'), // Nette\Database\Conventions\DiscoveredConventions
-				'autowired' => Expect::bool(),
-			])
-		)->before(function ($val) {
-			return is_array(reset($val)) || reset($val) === null
-				? $val
-				: ['default' => $val];
-		});
+		return Expect::arrayOf(Expect::from(new DatabaseConfig))
+			->normalize(function ($val) {
+				return is_array(reset($val)) || reset($val) === null
+					? $val
+					: ['default' => $val];
+			});
 	}
 
 
@@ -61,7 +53,7 @@ class DatabaseExtension extends Nette\DI\CompilerExtension
 	}
 
 
-	private function setupDatabase(\stdClass $config, string $name): void
+	private function setupDatabase(DatabaseConfig $config, string $name): void
 	{
 		$builder = $this->getContainerBuilder();
 
